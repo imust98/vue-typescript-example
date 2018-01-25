@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run start:dev",
-    "start:dev": "webpack-dev-server --color --config ./build/webpack.dev.js"
+    "start": "cross-env NODE_ENV=develop npm run start:dev",
+    "start:dev": "webpack-dev-server --color --config ./build/webpack.dev.js",
+    "build":"webpack  --config ./build/webpack.prod.js"
   },
   "repository": {
     "type": "git",
@@ -47,6 +48,7 @@
     "ts-node": "^3.3.0",
     "tslint": "^5.8.0",
     "tslint-loader": "^3.5.3",
+    "uglifyjs-webpack-plugin":"^1.0.0",
     "typescript": "^2.6.1",
     "vue": "^2.5.3",
     "vue-class-component": "^6.1.0",

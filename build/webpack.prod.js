@@ -4,8 +4,8 @@ const webpack = require('webpack')
 const merge = require('webpack-merge')
 const baseWebpackConfig = require('./webpack.base.js')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
 function resolve(dir) {
   return path.join(__dirname, dir);
@@ -18,16 +18,14 @@ module.exports = merge(baseWebpackConfig, {
   },
   devtool:'#source-map',
   plugins: [
-    new CleanWebpackPlugin(['public/dist']),
+    new CleanWebpackPlugin(['dist']),
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: '"production"'
       }
     }),
-    new OptimizeCSSPlugin({
-      cssProcessorOptions: {
-        safe: true
-      }
+    new UglifyJsPlugin({
+      sourceMap: true
     }),
     // generate dist index.html with correct asset hash for caching.
     // you can customize output by editing /index.html
