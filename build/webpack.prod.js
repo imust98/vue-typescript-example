@@ -1,11 +1,11 @@
-"use strict";
-const path = require('path')
-const webpack = require('webpack')
-const merge = require('webpack-merge')
-const baseWebpackConfig = require('./webpack.base.js')
-const HtmlWebpackPlugin = require('html-webpack-plugin')
+'use strict';
+const path = require('path');
+const webpack = require('webpack');
+const merge = require('webpack-merge');
+const baseWebpackConfig = require('./webpack.base.js');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 function resolve(dir) {
   return path.join(__dirname, dir);
@@ -16,9 +16,11 @@ module.exports = merge(baseWebpackConfig, {
     filename: '[name].[chunkhash].js',
     chunkFilename: '[name].[chunkhash].js'
   },
-  devtool:'#source-map',
+  devtool: '#source-map',
   plugins: [
-    new CleanWebpackPlugin(['dist']),
+    new CleanWebpackPlugin(['dist/'], {
+      root: process.cwd()
+    }),
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: '"production"'
@@ -49,15 +51,13 @@ module.exports = merge(baseWebpackConfig, {
     // split vendor js into its own file
     new webpack.optimize.CommonsChunkPlugin({
       name: 'vendor',
-      minChunks: function (module, count) {
+      minChunks: function(module, count) {
         // any required modules inside node_modules are extracted to vendor
         return (
           module.resource &&
           /\.js$/.test(module.resource) &&
-          module.resource.indexOf(
-            path.join(__dirname, './node_modules')
-          ) === 0
-        )
+          module.resource.indexOf(path.join(__dirname, './node_modules')) === 0
+        );
       }
     }),
     // extract webpack runtime and module manifest to its own file in order to
