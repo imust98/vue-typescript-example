@@ -15,4 +15,5 @@ export interface IFetchInit extends RequestInit {
 export interface IFetchRequest {
   url: string;
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
+  cache?: boolean;
 }

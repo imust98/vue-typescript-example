@@ -2,15 +2,19 @@ import { Store } from 'vuex';
 import merge from 'lodash/merge';
 import cloneDeep from 'lodash/cloneDeep';
 import isPlainObject from 'lodash/isPlainObject';
-import { IFetchRequest,IFetchInit } from './interfaces';
+import { IFetchRequest, IFetchInit } from './interfaces';
 import { compile } from 'path-to-regexp';
 import { stringify } from 'query-string';
-
 
 /**
  * vuex store
  */
 let store: Store<any>;
+
+/**
+ * fetch cache
+ */
+const lcache: Map<string, any> = new Map();
 
 /**
  * fetch install
@@ -39,11 +43,13 @@ const defaultInit = {
  */
 const defaultTimeout: number = 10 * 1000;
 function fetchTimeout(time: number = defaultTimeout): Promise<Response> {
-  const response = new Response(JSON.stringify({
-    code: 408,
-    msg: '超时，请稍后再试',
-    result: null
-  }));
+  const response = new Response(
+    JSON.stringify({
+      code: 408,
+      msg: '超时，请稍后再试',
+      result: null
+    })
+  );
 
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -55,8 +61,11 @@ function fetchTimeout(time: number = defaultTimeout): Promise<Response> {
 /**
  * 处理 fetch 参数
  */
-export function fetchParamParser(config: IFetchRequest, init?: IFetchInit): [string, IFetchInit] {
-  let { url,method } = config;
+export function fetchParamParser(
+  config: IFetchRequest,
+  init?: IFetchInit
+): [string, IFetchInit] {
+  let { url, method } = config;
   // 不修改输入的原对象
   init = cloneDeep(init);
 
@@ -84,13 +93,16 @@ export function fetchParamParser(config: IFetchRequest, init?: IFetchInit): [str
   if (['GET', 'DELETE'].includes(method) && init && init.body) {
     const query = stringify(init.body);
 
-    url = url.includes('?')
-      ? `${url}&${query}`
-      : `${url}?${query}`;
+    url = url.includes('?') ? `${url}&${query}` : `${url}?${query}`;
   }
 
   // stringify body
-  if (!['GET', 'DELETE'].includes(method) && init && init.body && isPlainObject(init.body)) {
+  if (
+    !['GET', 'DELETE'].includes(method) &&
+    init &&
+    init.body &&
+    isPlainObject(init.body)
+  ) {
     init.body = JSON.stringify(init.body);
   }
 
@@ -100,38 +112,36 @@ export function fetchParamParser(config: IFetchRequest, init?: IFetchInit): [str
   return [url, init as IFetchInit];
 }
 
-export function fetch(
-  config: IFetchRequest,
-  init?: IFetchInit
-): Promise<any> {
-  const {method } = config;
+export function fetch(config: IFetchRequest, init?: IFetchInit): Promise<any> {
+  const { method, cache } = config;
 
   // parser param
   const [url, newInit] = fetchParamParser(config, init);
 
+  if (cache && lcache.has(url)) {
+    return Promise.resolve(lcache.get(url));
+  }
   // 超时处理
   let request: Promise<any>;
   if (newInit.timeout === false) {
     request = window.fetch(url, newInit);
   } else {
-    const timeout = typeof newInit.timeout === 'number'
-      ? newInit.timeout
-      : defaultTimeout;
+    const timeout =
+      typeof newInit.timeout === 'number' ? newInit.timeout : defaultTimeout;
 
-    request = Promise.race([
-      window.fetch(url, newInit),
-      fetchTimeout(timeout)
-    ]);
+    request = Promise.race([window.fetch(url, newInit), fetchTimeout(timeout)]);
   }
 
   return request
     .then(response => {
       // fetch 异常处理
-      return response.ok ? response.json() : {
-        code: response.status,
-        msg: response.statusText,
-        result: null
-      };
+      return response.ok
+        ? response.json()
+        : {
+            code: response.status,
+            msg: response.statusText,
+            result: null
+          };
     })
     .then(responseData => {
       // 全局统一的 Fetch Notify
@@ -154,11 +164,14 @@ export function fetch(
 
         nextData = Promise.reject(msg);
       } else {
+        if (code === 200 && method === 'GET' && cache) {
+          lcache.set(url, result);
+        }
         nextData = result;
       }
 
       return nextData;
-    })
+    });
 }
 
 export default fetch;
